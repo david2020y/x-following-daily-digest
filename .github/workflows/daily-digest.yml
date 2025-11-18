@@ -1,4 +1,4 @@
-name: 每日X关注账号微信推送（snscrape版）
+name: X日报 WhatsApp推送
 
 on:
   schedule:
@@ -10,10 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install snscrape
-        run: pip install snscrape jinja2 requests
-      - name: 生成并推送日报
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install requests
+      - run: python digest.py
         env:
+          BEARER_TOKEN: ${{ secrets.BEARER_TOKEN }}
           X_USERNAME: ${{ secrets.X_USERNAME }}
-          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
-        run: python digest.py
+          WHATSAPP_PHONE: ${{ secrets.WHATSAPP_PHONE }}
+          WHATSAPP_APIKEY: ${{ secrets.WHATSAPP_APIKEY }}
