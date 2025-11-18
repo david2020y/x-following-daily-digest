@@ -2,21 +2,24 @@ name: 每日X关注账号微信推送
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # 北京时间08:00
+    - cron: '0 0 * * *'    # 北京时间每天早上8点
   workflow_dispatch:
 
 jobs:
-  digest:
+  run:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
       - name: Install dependencies
-        run: pip install twarc twarc-csv pandas jinja2 requests
-      - name: Run digest
+        run: pip install twarc twarc-csv jinja2 requests pandas
+
+      - name: 执行日报生成与推送
         env:
           BEARER_TOKEN: ${{ secrets.BEARER_TOKEN }}
           X_USERNAME: ${{ secrets.X_USERNAME }}
