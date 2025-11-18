@@ -1,0 +1,31 @@
+name: Daily X Following Digest
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # 每天北京时间早上8:00运行
+  workflow_dispatch:  # 支持手动触发
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install twarc twarc-csv pandas jinja2
+      - name: Run digest
+        env:
+          BEARER_TOKEN: ${{ secrets.BEARER_TOKEN }}
+          X_USERNAME: ${{ secrets.X_USERNAME }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+        run: python digest.py
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: 今日行业报告
+          path: report_*.pdf
