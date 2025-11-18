@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><title>{{ date }} 行业动态</title></head>
+<head><meta charset="utf-8"><title>{{ date }} 行业日报</title></head>
 <body>
-<h1>{{ date }} X关注账号热点汇总（Top 50）</h1>
+<h1>{{ date }} X关注账号行业日报（共{{ total }}条）</h1>
 <ol>
 {% for t in tweets %}
-  <li><strong>@{{ t.author.username }}</strong>: {{ t.text[:200] }}...<br>
-  ❤️ {{ t.public_metrics.like_count }} 🔁 {{ t.public_metrics.retweet_count }} 
+  <li><strong>@{{ t.author.username }}</strong> ❤️{{ t.public_metrics.like_count }}<br>
+  {{ t.text | replace("\n", "<br>") | safe }}<br>
   <a href="https://x.com/{{ t.author.username }}/status/{{ t.id }}">查看原文</a></li><hr>
 {% endfor %}
 </ol>
