@@ -1,48 +1,44 @@
 import os
 import datetime
-import json
-import subprocess
-from jinja2 import Template
 import requests
-import urllib.parse
+from jinja2 import Template
 
+bearer_token = os.environ["BEARER_TOKEN"]
 username = os.environ["X_USERNAME"]
 phone = os.environ["WHATSAPP_PHONE"]
 apikey = os.environ["WHATSAPP_APIKEY"]
 
-# 使用 snscrape 抓取昨日所有关注账号的推文
-date_since = (datetime.date.today() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-cmd = f"snscrape --jsonl --since {date_since} twitter-user-following {username}"
+headers = {"authorization": f"Bearer {bearer_token}"}
 
-result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-tweets = [json.loads(line) for line in result.stdout.strip().split('\n') if line.strip()]
+# 获取用户 ID
+user_resp = requests.get(f"https://api.twitter.com/2/users/by/username/{username}", headers=headers).json()
+user_id = user_resp["data"]["id"]
+
+# 获取 following 列表
+following = requests.get(f"https://api.twitter.com/2/users/{user_id}/following?max_results=1000", headers=headers).json()
+
+tweets = []
+for user in following.get("data", []):
+    user_timeline = requests.get(
+        f"https://api.twitter.com/2/users/{user['id']}/tweets",
+        params={"max_results": 100, "start_time": (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)).isoformat("T") + "Z"},
+        headers=headers
+    ).json()
+    tweets.extend(user_timeline.get("data", []))
 
 today = datetime.date.today().strftime("%Y-%m-%d")
 
 if not tweets:
-    text = f"{today} X关注账号行业日报\n\n昨日无新推文"
+    text = f"*{today} X关注账号行业日报*\n\n昨日无新推文"
 else:
-    # 按点赞排序取前30条
-    tweets = sorted(tweets, key=lambda x: x.get('likeCount', 0), reverse=True)[:30]
-    
-    with open("template.html", encoding="utf-8") as f:
-        template = Template(f.read())
-    html = template.render(date=today, tweets=tweets, total=len(tweets))
-    
-    # WhatsApp 最大支持 4096 字符，直接发 HTML 太长会截断，所以改成简洁文字版
-    lines = [f"{today} X关注账号行业日报（共{len(tweets)}条）\n"]
+    tweets = sorted(tweets, key=lambda x: x.get("public_metrics", {}).get("like_count", 0), reverse=True)[:30]
+    lines = [f"*{today} X关注账号行业日报（共{len(tweets)}条）*\n"]
     for i, t in enumerate(tweets, 1):
-        user = t['user']['displayname'] or t['user']['username']
-        text_preview = t['rawContent'].replace("\n", " ").replace("*", "").replace("_", "").replace("`", "")
-        if len(text_preview) > 120:
-            text_preview = text_preview[:120] + "..."
-        line = f"{i}. @{t['user']['username']} ({user})\n❤ {t.get('likeCount',0)}   🔁 {t.get('retweetCount',0)}\n{text_preview}\nhttps://x.com/{t['user']['username']}/status/{t['id']}\n"
-        lines.append(line)
-    
+        lines.append(f"{i}. @{t['author_id']} ❤️ {t['public_metrics']['like_count']}\n{t['text'][:150]}...\nhttps://x.com/i/status/{t['id']}\n")
     text = "\n".join(lines)
 
-# 发送到 WhatsApp
-url = f"https://api.callmebot.com/whatsapp.php?phone={phone}&apikey={apikey}&text={urllib.parse.quote(text)}"
+# WhatsApp 推送
+url = f"https://api.callmebot.com/whatsapp.php?phone={phone}&apikey={apikey}&text={requests.utils.quote(text)}"
 requests.get(url)
 
-print("WhatsApp 推送成功")
+print("WhatsApp 推送完成")
