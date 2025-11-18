@@ -2,7 +2,7 @@ name: X日报 WhatsApp推送
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 0 * * *'  # 北京时间每天08:00
   workflow_dispatch:
 
 jobs:
