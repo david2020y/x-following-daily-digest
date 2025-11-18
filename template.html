@@ -1,14 +1,21 @@
 <!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><title>{{ date }} 行业日报</title></head>
+<head>
+    <meta charset="utf-8">
+    <title>行业日报</title>
+    <style>body{font-family:Arial,sans-serif;padding:20px;} li{margin:15px 0;} hr{border:1px dashed #ddd;}</style>
+</head>
 <body>
-<h1>{{ date }} X关注账号行业日报（共{{ total }}条）</h1>
-<ol>
-{% for t in tweets %}
-  <li><strong>@{{ t.author.username }}</strong> ❤️{{ t.public_metrics.like_count }}<br>
-  {{ t.text | replace("\n", "<br>") | safe }}<br>
-  <a href="https://x.com/{{ t.author.username }}/status/{{ t.id }}">查看原文</a></li><hr>
-{% endfor %}
-</ol>
+    <h1>{{ date }} X关注账号行业日报（共{{ total }}条）</h1>
+    <ol>
+    {% for t in tweets %}
+        <li>
+            <strong>@{{ t.author.username }}</strong> ❤️ {{ t.public_metrics.like_count }} 🔁 {{ t.public_metrics.retweet_count }}<br>
+            {{ t.text | replace("\n", "<br>") | safe }}<br>
+            <small><a href="https://x.com/{{ t.author.username }}/status/{{ t.id }}" target="_blank">查看原文</a> · {{ t.created_at[:10] }}</small>
+        </li>
+        <hr>
+    {% endfor %}
+    </ol>
 </body>
 </html>
